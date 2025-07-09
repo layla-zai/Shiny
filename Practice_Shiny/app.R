@@ -9,43 +9,53 @@
 
 library(shiny)
 
-# Define UI for application that draws a histogram
-ui <- fluidPage(
+library(shiny)
+library(bslib)
+library(ggplot2)
 
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
+# Get the data
 
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
+file <- "https://github.com/rstudio-education/shiny-course/raw/main/movies.RData"
+destfile <- "movies.RData"
 
-        # Show a plot of the generated distribution
-        mainPanel(
-           plotOutput("distPlot")
-        )
+download.file(file, destfile)
+
+# Load data
+
+load("movies.RData")
+
+# Define UI
+
+ui <- page_sidebar(
+  sidebar = sidebar(
+    # Select variable for y-axis
+    selectInput(
+      inputId = "y",
+      label = "Y-axis:",
+      choices = c("imdb_rating", "imdb_num_votes", "critics_score", "audience_score", "runtime"),
+      selected = "audience_score"
+    ),
+    # Select variable for x-axis
+    selectInput(
+      inputId = "x",
+      label = "X-axis:",
+      choices = c("imdb_rating", "imdb_num_votes", "critics_score", "audience_score", "runtime"),
+      selected = "critics_score"
     )
+  ),
+  # Output: Show scatterplot
+  card(plotOutput(outputId = "scatterplot"))
 )
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
+# Define server
 
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             xlab = 'Waiting time to next eruption (in mins)',
-             main = 'Histogram of waiting times')
-    })
+server <- function(input, output, session) {
+  output$scatterplot <- renderPlot({
+    ggplot(data = movies, aes_string(x = input$x, y = input$y)) +
+      geom_point()
+  })
 }
 
-# Run the application 
+# Create a Shiny app object
+
 shinyApp(ui = ui, server = server)
